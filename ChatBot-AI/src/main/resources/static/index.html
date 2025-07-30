@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Chatbot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        .message-content {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.6;
+        }
+
+        /* Dark theme for code blocks */
+        .message-content code {
+            background-color: #1f2937;
+            color: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        /* Code blocks */
+        .message-content pre {
+            background-color: #1f2937;
+            color: #f3f4f6;
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 8px 0;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .message-content pre code {
+            background-color: transparent;
+            padding: 0;
+        }
+
+        /* Lists */
+        .message-content ul, .message-content ol {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+
+        .message-content li {
+            margin: 4px 0;
+        }
+
+        /* Headings */
+        .message-content h1, .message-content h2, .message-content h3,
+        .message-content h4, .message-content h5, .message-content h6 {
+            font-weight: bold;
+            margin: 12px 0 8px 0;
+            color: #60a5fa;
+        }
+
+        .message-content h1 { font-size: 1.5em; }
+        .message-content h2 { font-size: 1.3em; }
+        .message-content h3 { font-size: 1.1em; }
+
+        /* Strong/Bold text */
+        .message-content strong, .message-content b {
+            font-weight: bold;
+            color: #f9fafb;
+        }
+
+        /* Emphasis/Italic text */
+        .message-content em, .message-content i {
+            font-style: italic;
+            color: #d1d5db;
+        }
+
+        /* Links */
+        .message-content a {
+            color: #60a5fa;
+            text-decoration: underline;
+        }
+
+        .message-content a:hover {
+            color: #93c5fd;
+        }
+
+        /* Blockquotes */
+        .message-content blockquote {
+            border-left: 4px solid #374151;
+            padding-left: 12px;
+            margin: 8px 0;
+            color: #9ca3af;
+            font-style: italic;
+        }
+
+        /* Scrollbar styling for dark theme */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #374151;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #6b7280;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 h-screen flex flex-col text-gray-100">
+<div class="container mx-auto p-4 flex-1 flex flex-col">
+    <h1 class="text-3xl font-bold mb-6 text-center text-blue-400">AI Chatbot</h1>
+
+    <div class="flex-1 overflow-y-auto mb-4 p-4 bg-gray-800 rounded-lg shadow-lg border border-gray-700">
+        <div id="chat-messages" class="space-y-4"></div>
+    </div>
+
+    <form id="chat-form" class="flex items-center">
+        <input
+                type="text"
+                id="message-input"
+                name="message"
+                placeholder="Escribe tu mensaje..."
+                class="flex-1 p-3 bg-gray-800 border border-gray-600 text-gray-100 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400"
+                required
+        >
+        <button
+                type="submit"
+                class="bg-blue-600 text-white px-6 py-3 rounded-r-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
+        >
+            Enviar
+        </button>
+    </form>
+</div>
+
+<script>
+    const chatForm = document.getElementById('chat-form');
+    const messageInput = document.getElementById('message-input');
+    const chatMessages = document.getElementById('chat-messages');
+
+    chatForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const message = messageInput.value;
+        if (!message) return;
+
+        // Add user message to chat
+        addMessageToChat('User', message);
+
+        // Clear input
+        messageInput.value = '';
+
+        // Fetch streaming data from the server
+        try {
+            const response = await fetchStreamWithRetry('/stream?message=' + encodeURIComponent(message));
+            const reader = response.body.getReader();
+            let botMessageElement = addMessageToChat('Bot', '');
+            let contentElement = botMessageElement.querySelector('.message-content');
+            await processStream(reader, contentElement);
+        } catch (error) {
+            console.error('Error fetching chatbot response:', error);
+            addMessageToChat('System', 'Ocurrió un error al obtener la respuesta. Por favor, inténtalo de nuevo.');
+        }
+    });
+
+    async function fetchStreamWithRetry(url, retries = 3) {
+        for (let i = 0; i < retries; i++) {
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return response;
+            } catch (e) {
+                console.error(`Attempt ${i + 1} failed: ${e.message}`);
+                if (i === retries - 1) throw e;
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retrying
+            }
+        }
+    }
+
+    async function processStream(reader, contentElement) {
+        const decoder = new TextDecoder("utf-8");
+        let accumulatedContent = '';
+
+        try {
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) {
+                    // Final processing when stream is complete
+                    if (accumulatedContent.trim()) {
+                        contentElement.innerHTML = parseMarkdown(accumulatedContent);
+                    }
+                    break;
+                }
+
+                accumulatedContent += decoder.decode(value, { stream: true });
+
+                // Update display with accumulated content
+                contentElement.innerHTML = parseMarkdown(accumulatedContent);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        } catch (error) {
+            console.error('Error processing stream:', error);
+            contentElement.innerHTML += '<br><span class="text-red-400">[Error: Stream interrupted. Please try again.]</span>';
+        }
+    }
+
+    function parseMarkdown(text) {
+        // Configure marked options for better rendering
+        marked.setOptions({
+            breaks: true,
+            gfm: true,
+            sanitize: false
+        });
+
+        try {
+            return marked.parse(text);
+        } catch (error) {
+            console.error('Markdown parsing error:', error);
+            // Fallback to basic formatting if marked fails
+            return basicMarkdownFormat(text);
+        }
+    }
+
+    function basicMarkdownFormat(text) {
+        return text
+            // Bold text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/__(.*?)__/g, '<strong>$1</strong>')
+            // Italic text
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/_(.*?)_/g, '<em>$1</em>')
+            // Code blocks
+            .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+            // Inline code
+            .replace(/`(.*?)`/g, '<code>$1</code>')
+            // Line breaks
+            .replace(/\n/g, '<br>')
+            // Lists (basic)
+            .replace(/^\*\s+(.+)$/gm, '<li>$1</li>')
+            .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+    }
+
+    function addMessageToChat(sender, content) {
+        const messageElement = document.createElement('div');
+
+        // Dark theme colors for messages
+        const userBg = 'bg-blue-900 border-blue-700';
+        const botBg = 'bg-gray-700 border-gray-600';
+        const systemBg = 'bg-red-900 border-red-700';
+
+        let bgClass, textColorClass;
+
+        if (sender === 'User') {
+            bgClass = userBg;
+            textColorClass = 'text-blue-300';
+        } else if (sender === 'System') {
+            bgClass = systemBg;
+            textColorClass = 'text-red-300';
+        } else {
+            bgClass = botBg;
+            textColorClass = 'text-green-400';
+        }
+
+        messageElement.className = `${sender.toLowerCase()}-message ${bgClass} p-4 rounded-lg border shadow-md`;
+        messageElement.innerHTML = `
+            <div class="font-bold ${textColorClass} mb-2">${sender}:</div>
+            <div class="message-content text-gray-100">${content}</div>
+        `;
+        chatMessages.appendChild(messageElement);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        return messageElement;
+    }
+</script>
+</body>
+</html>
