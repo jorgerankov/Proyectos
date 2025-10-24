@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Transaccion.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tp2</a> &gt; <a href="index.source.html" class="el_package">aed</a> &gt; <span class="el_source">Transaccion.java</span></div><h1>Transaccion.java</h1><pre class="source lang-java linenums">package aed;
+public class Transaccion implements Comparable&lt;Transaccion&gt; {
+    public int id;
+    private int id_comprador;
+    private int id_vendedor;
+    private int monto;
+    private int indiceOriginal;
+
+<span class="fc" id="L9">    public Transaccion(int id, int id_comprador, int id_vendedor, int monto) {</span>
+<span class="fc" id="L10">        this.id = id;</span>
+<span class="fc" id="L11">        this.id_comprador = id_comprador;</span>
+<span class="fc" id="L12">        this.id_vendedor = id_vendedor;</span>
+<span class="fc" id="L13">        this.monto = monto;</span>
+<span class="fc" id="L14">    }</span>
+
+    //le hago Override para poder agregar la definición por id
+    @Override
+    public int compareTo(Transaccion otro) {
+<span class="fc bfc" id="L19" title="All 2 branches covered.">        if(this.monto!=otro.monto){         // Si son distintos</span>
+<span class="fc bfc" id="L20" title="All 2 branches covered.">            if (this.monto &gt; otro.monto) { // devuelvo 1 si el monto1&gt;monto2</span>
+<span class="fc" id="L21">                return 1;</span>
+            }else {                       // devuelvo -1 si monto2&gt;monto1
+<span class="fc" id="L23">                return -1;</span>
+            }
+        } else {                               // Si los montos son iguales
+<span class="fc bfc" id="L26" title="All 2 branches covered.">            if (this.id &gt; otro.id) {          // devuelvo 1 si el id1&gt;id2</span>
+<span class="fc" id="L27">                return 1;</span>
+<span class="fc bfc" id="L28" title="All 2 branches covered.">            } else if (this.id &lt; otro.id) {</span>
+<span class="fc" id="L29">                return -1;                      // devuelvo -1 si el id2&gt;id1</span>
+            } else {
+<span class="fc" id="L31">                return 0;                  // si es la misma transacción devuelvo 0</span>
+            }
+        }
+    }
+
+    @Override
+    public boolean equals(Object otro){
+
+<span class="pc bpc" id="L39" title="2 of 4 branches missed.">        if (otro == null || otro.getClass() != this.getClass()) {</span>
+<span class="nc" id="L40">            return false;</span>
+        }
+
+<span class="fc" id="L43">        Transaccion otraTransaccion = (Transaccion) otro;</span>
+<span class="pc bpc" id="L44" title="4 of 8 branches missed.">        return this.id == otraTransaccion.id &amp;&amp; this.id_comprador == otraTransaccion.id_comprador &amp;&amp; this.id_vendedor == otraTransaccion.id_vendedor &amp;&amp; this.monto == otraTransaccion.monto;</span>
+    }
+
+    public int monto() {
+<span class="fc" id="L48">        return monto;</span>
+    }
+
+    public int id_comprador() {
+<span class="fc" id="L52">        return id_comprador;</span>
+    }
+    
+    public int id_vendedor() {
+<span class="fc" id="L56">        return id_vendedor;</span>
+    }
+
+    public void setIndiceOriginal(int i) {
+<span class="fc" id="L60">        this.indiceOriginal = i;</span>
+<span class="fc" id="L61">    }</span>
+
+    public int indiceOriginal() {
+<span class="fc" id="L64">        return indiceOriginal;</span>
+    }
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Usuario.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tp2</a> &gt; <a href="index.source.html" class="el_package">aed</a> &gt; <span class="el_source">Usuario.java</span></div><h1>Usuario.java</h1><pre class="source lang-java linenums">package aed;
+
+public class Usuario implements Comparable&lt;Usuario&gt; {
+    public int id;
+    public int monto;
+    public int indiceHeap;
+
+    // INDICEHEAP:
+    // Esto es para guardar el indice en el que está el usuario en el heapUsuarios
+    // Yo cada vez que trabajo con el heap lo puedo obtener fácilmente, entonces lo guardo
+    // ¿Para qué lo quiero obtener fácilmente?
+    // PARA ACTUALIZAR LOS MONTOS EN EL HEAP después del hackeo
+    // Si yo tengo este índice a mano, no tengo que andar buscandolo en ese momento
+    // Simplemente me lo guardo y lo uso
+
+<span class="fc" id="L16">    public Usuario(int id, int monto) {</span>
+<span class="fc" id="L17">        this.id = id;</span>
+<span class="fc" id="L18">        this.monto = monto;</span>
+
+<span class="fc" id="L20">        this.indiceHeap = -1; //  Esto lo actualizamos al momento en que:</span>
+                             // * Creamos el heap y definimos la posición en la que entra
+                            // ** Cada vez que se mueve
+<span class="fc" id="L23">    }</span>
+
+    @Override
+    public int compareTo(Usuario otro) {
+<span class="fc bfc" id="L27" title="All 2 branches covered.">        if(this.monto!=otro.monto){         // Si son distintos</span>
+<span class="fc bfc" id="L28" title="All 2 branches covered.">            if (this.monto &gt; otro.monto) { // devuelvo 1 si el monto1&gt;monto2</span>
+<span class="fc" id="L29">                return 1;</span>
+            }else {                       // devuelvo -1 si monto2&gt;monto1
+<span class="fc" id="L31">                return -1;</span>
+            }
+        } else {                               // Si los montos son iguales
+<span class="fc bfc" id="L34" title="All 2 branches covered.">            if (this.id &gt; otro.id) {          // devuelvo -1 si el id1&gt;id2</span>
+<span class="fc" id="L35">                return -1;</span>
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">            } else if (this.id &lt; otro.id) {</span>
+<span class="fc" id="L37">                return 1;                      // devuelvo -1 si el id2&gt;id1</span>
+            } else {
+<span class="nc" id="L39">                return 0;                  // si es la misma transacción devuelvo 0</span>
+            }
+        }
+    }
+
+    public int obtenerId() {
+<span class="nc" id="L45">        return this.id;</span>
+    }
+    public int obtenerMonto() {
+<span class="fc" id="L48">        return this.monto;</span>
+    }
+
+    public void actualizarMonto(int monto) {
+<span class="fc" id="L52">        this.monto = monto;</span>
+<span class="fc" id="L53">    }</span>
+
+    public int obtenerIndiceHeap() {
+<span class="fc" id="L56">        return indiceHeap;</span>
+    }
+
+    // Acá me guardo la nueva posición de este usuario en el heap
+    public void actualizarIndiceHeap(int i) {
+<span class="fc" id="L61">        indiceHeap = i;</span>
+<span class="fc" id="L62">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

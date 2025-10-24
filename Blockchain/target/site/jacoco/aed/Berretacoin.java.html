@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Berretacoin.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tp2</a> &gt; <a href="index.source.html" class="el_package">aed</a> &gt; <span class="el_source">Berretacoin.java</span></div><h1>Berretacoin.java</h1><pre class="source lang-java linenums">// Bautista Marsico - 1001/24
+// Tiziana Falbo - 863/23
+// Facundo Herrera - 1175/22
+// Jorge Rankov - 714/23
+
+
+package aed;
+
+//----------------------------------------------------------------------------------------------------------------------
+
+public class Berretacoin {
+    private Usuario[] usuariosTotales;
+    private Bloque bloqueActual;
+    private Bloque bloquePrevio;
+    private int idBloqueActual;
+
+    Heap heapUsers;
+
+//----------------------------------------------------------------------------------------------------------------------
+
+    // O(P)
+<span class="fc" id="L22">    public Berretacoin(int n_usuarios){</span>
+<span class="fc" id="L23">        usuariosTotales = new Usuario[n_usuarios + 1];</span>
+<span class="fc" id="L24">        usuariosTotales[0] = null;                  // id &quot;reservado&quot; de creación</span>
+<span class="fc" id="L25">        heapUsers = new Heap();</span>
+<span class="fc bfc" id="L26" title="All 2 branches covered.">        for (int i = 1; i &lt;= n_usuarios; i++) {</span>
+<span class="fc" id="L27">            usuariosTotales[i] = new Usuario(i, 0); // Generar arreglo de usuario ---&gt; O(P)</span>
+        }
+<span class="fc" id="L29">        heapUsers.generarHeapify(usuariosTotales);        // Generar heapify ord. monto ----&gt; O(P)</span>
+<span class="fc" id="L30">        bloquePrevio=null;</span>
+<span class="fc" id="L31">        idBloqueActual = 0;</span>
+<span class="fc" id="L32">    } //------------------------------------------------&gt; O(P)</span>
+
+
+//----------------------------------------------------------------------------------------------------------------------
+
+    //O(Nb*logP)
+    public void agregarBloque(Transaccion[] transacciones){
+<span class="fc" id="L39">        bloquePrevio = bloqueActual;</span>
+<span class="fc" id="L40">        bloqueActual = new Bloque(transacciones);  // Yo creo un bloque con N transacciones -----&gt; O(Nb)</span>
+
+<span class="fc bfc" id="L42" title="All 2 branches covered.">        if(transacciones.length==0){</span>
+<span class="fc" id="L43">            bloqueActual = bloquePrevio;</span>
+<span class="fc" id="L44">            return;</span>
+        }
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        if(!esBloqueValido(transacciones[0], idBloqueActual)){</span>
+<span class="fc" id="L47">            bloqueActual = bloquePrevio;</span>
+<span class="fc" id="L48">            return;</span>
+        }
+
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        for (int i = 0; i &lt; transacciones.length; i++) {</span>
+<span class="fc" id="L52">            Transaccion transaccionActual = transacciones[i];</span>
+<span class="fc" id="L53">            int comprador = transaccionActual.id_comprador();</span>
+<span class="fc" id="L54">            int vendedor = transaccionActual.id_vendedor();</span>
+<span class="fc" id="L55">            int monto = transaccionActual.monto();</span>
+
+<span class="pc bpc" id="L57" title="1 of 4 branches missed.">            if(i&gt;0 &amp;&amp; transaccionActual.id&lt;= transacciones[i-1].id){ // Id de transacciones ordenados crecientemente</span>
+<span class="nc" id="L58">                bloqueActual=bloquePrevio;</span>
+<span class="nc" id="L59">                return;</span>
+            }
+
+<span class="fc bfc" id="L62" title="All 2 branches covered.">             if(!esTransaccionValida(transaccionActual, i)){</span>
+<span class="fc" id="L63">             bloqueActual=bloquePrevio;</span>
+<span class="fc" id="L64">             return;</span>
+             }
+
+<span class="fc bfc" id="L67" title="All 2 branches covered.">            if (comprador != 0) {</span>
+<span class="fc" id="L68">                usuariosTotales[comprador].actualizarMonto(usuariosTotales[comprador].obtenerMonto() - monto); //--&gt;O(1)</span>
+            }
+<span class="fc" id="L70">            usuariosTotales[vendedor].actualizarMonto(usuariosTotales[vendedor].obtenerMonto() + monto);      //--&gt;O(1)</span>
+
+<span class="fc bfc" id="L72" title="All 2 branches covered.">                if (comprador != 0) {</span>
+<span class="fc" id="L73">                    heapUsers.actualizar(usuariosTotales[comprador]);                                      // --&gt; O(logP)</span>
+                }
+<span class="fc" id="L75">                heapUsers.actualizar(usuariosTotales[vendedor]);                                          // --&gt; O(logP)</span>
+            }
+    // tengo ---&gt; O(logP) para cada transferencia que cargo O(Nb)
+<span class="fc bfc" id="L78" title="All 2 branches covered.">        if (bloquePrevio != null) {</span>
+<span class="fc" id="L79">            idBloqueActual++;</span>
+        }
+<span class="fc" id="L81">    } // Entonces tengo ---------------------------------------------&gt; O(Nb*logP)</span>
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+    // O(1)
+    public Transaccion txMayorValorUltimoBloque(){
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">        if(bloqueActual == null){</span>
+<span class="nc" id="L88">            return null;</span>
+        }
+<span class="fc" id="L90">        return (Transaccion) bloqueActual.obtenerHeap().devolverMaximo();  // Acá llamo al heap del bloque y al método devolverMaximo</span>
+                                                            // como es un heapMax, devolver bloque retorna la raíz heap
+                                                           // Y esto es una operación directa a heapTransaccion[0]
+    } // Entonces --------------------------&gt; O(1)
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+    //O(Nb)
+    public Transaccion[] txUltimoBloque(){
+<span class="pc bpc" id="L100" title="1 of 4 branches missed.">        if (bloqueActual == null || bloqueActual.obtenerTransacciones() == null) {</span>
+<span class="fc" id="L101">            return new Transaccion[0];</span>
+        }
+        //obtenerTransacciones me retorna una copia de la lista enlazada lo cuál es O(Nb)
+<span class="fc" id="L104">        return bloqueActual.obtenerTransacciones();</span>
+    } // ------------------------------&gt; O(Nb)
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+    // O(1)
+    public int maximoTenedor(){
+<span class="fc" id="L111">        return ((Usuario) heapUsers.devolverMaximo()).id; // Accedo a la raíz del heapUsuarios y devuelvo su id</span>
+    } // Esto es un acceso directo a una posición entonces ------------------&gt; O(1)
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+    // O(1)
+    public int montoMedioUltimoBloque(){
+<span class="fc bfc" id="L119" title="All 4 branches covered.">        if (bloqueActual == null || bloqueActual.cantidadTransferencias() == 0){</span>
+<span class="fc" id="L120">            return 0;</span>
+        }
+        // Accedo de forma directa al bloque (O(1)) y llamo a dos atributos que ya están calculados
+<span class="fc" id="L123">        return (bloqueActual.montoTotal())/(bloqueActual.cantidadTransferencias()); // División de dos enteros</span>
+    } //-----------------------------------------------------------------&gt; O(1)
+
+
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+    // O(logNb + logP)
+    public void hackearTx(){
+<span class="pc bpc" id="L132" title="1 of 4 branches missed.">        if (bloqueActual == null || bloqueActual.obtenerTransacciones().length == 0) return;</span>
+
+<span class="fc" id="L134">        Transaccion hackeada = (Transaccion) bloqueActual.obtenerHeap().devolverMaximo(); // Acceso directo ----&gt; O(1)</span>
+<span class="pc bpc" id="L135" title="1 of 2 branches missed.">        if (hackeada == null) return;</span>
+
+<span class="fc" id="L137">        bloqueActual.hackearBloque();           // Acá MODIFICO el bloque (lista enlazada) y el heapTransacciones</span>
+                                               // * MODIFICAR heapTransacciones: Acá me &quot;robo&quot; la transacción máxima
+                                              // Al ser un heapMax, tengo que eliminar la raíz
+                                             // Para esto intercambio raíz con última posición, elimino, y reordeno
+                                            // desde la raíz. Todo esto tiene un coste -------&gt; O(logNb)
+        //-------------------------------------------------------------------------------------------------------------
+                                          // ** MODIFICAR bloque: dentro de la clase Bloque trabajo bloqueActual como
+                                         // una lista enlazada con un handle. Me permite acceder con un puntero (O(1))
+                                        // al nodo y eliminarlo (con un método de eliminación para lista enlazada con
+                                       // handle, que recibe como parámetro directamente la referencia del handle) O(1)
+                                      // Es O(1) esto porque no lo tengo que buscar, en todo momento indico dónde está
+                                     // Todo este proceso de modificación del bloque es ------&gt; O(1)
+
+<span class="fc" id="L150">        int vendedor = hackeada.id_vendedor();</span>
+<span class="fc" id="L151">        int comprador = hackeada.id_comprador();</span>
+<span class="fc" id="L152">        int monto = hackeada.monto();</span>
+
+        // Revertir montos (porque la transacción fue eliminada)
+<span class="fc" id="L155">        usuariosTotales[vendedor].actualizarMonto(usuariosTotales[vendedor].obtenerMonto() - monto); // Actualizo el</span>
+                                                                                                    // ArrayUsuarios
+                                                                                                   // --&gt; O(1)
+<span class="fc" id="L158">        heapUsers.actualizar(usuariosTotales[vendedor]); // Actualizo el heap de usuarios indicandole el usuario</span>
+                                                        // El método actualizar recibe un usuario y apunta al índice
+                                                       // En todo momento tengo guardado en el usuario su ubicación en
+                                                      // el heap. Por eso en el método actualizar uso el reordenamiento
+                                                     // indicandole directamente el índice guardado el usuario del heap
+                                                    // * Indicar qué usuario actualizar -&gt; O(1)
+                                                   // ** Reordenar el heap -----------------------&gt; O(logP)
+
+<span class="fc bfc" id="L166" title="All 2 branches covered.">        if (comprador != 0) {</span>
+<span class="fc" id="L167">            usuariosTotales[comprador].actualizarMonto(usuariosTotales[comprador].obtenerMonto() + monto);</span>
+<span class="fc" id="L168">            heapUsers.actualizar(usuariosTotales[comprador]); // Lo mismo con el comprador</span>
+        }
+        // ENTONCES: Los procesos de eliminación no son más que accesos directos -&gt; O(1)
+        // y los reordenamientos de los heap miden: *  heapTransacciones: O(logNb)
+        //                                          ** heapUsuarios: O(logP)
+
+<span class="fc" id="L174">    }//--------------&gt; O(logNb + logP)</span>
+
+
+//---------------------------------------------------------------------------------------------------------------------
+
+    public Boolean esTransaccionValida(Transaccion transaccion, int indice){
+<span class="pc bpc" id="L180" title="1 of 4 branches missed.">        if (indice!=0 &amp;&amp; transaccion.id_comprador() == 0) {</span>
+<span class="nc" id="L181">            return false;</span>
+        }
+<span class="pc bpc" id="L183" title="1 of 4 branches missed.">        if (transaccion.id_comprador() != 0 &amp;&amp; usuariosTotales[transaccion.id_comprador()].obtenerMonto() &lt; usuariosTotales[transaccion.id_comprador()].obtenerMonto()) {</span>
+<span class="nc" id="L184">            return false;</span>
+        }
+<span class="fc bfc" id="L186" title="All 2 branches covered.">        if(transaccion.id_comprador() == transaccion.id_vendedor()){</span>
+<span class="fc" id="L187">            return false;</span>
+        }
+<span class="fc bfc" id="L189" title="All 2 branches covered.">        if(transaccion.monto() &lt;= 0){</span>
+<span class="fc" id="L190">            return false;</span>
+
+        }
+<span class="fc" id="L193">        return true;</span>
+    }
+    public Boolean esBloqueValido(Transaccion transaccion, int indice){
+<span class="fc bfc" id="L196" title="All 4 branches covered.">        if(idBloqueActual&lt;2999 &amp;&amp; transaccion.id_comprador()!=0){</span>
+<span class="fc" id="L197">            return false;</span>
+        }
+<span class="pc bpc" id="L199" title="1 of 4 branches missed.">        if (idBloqueActual&gt;2999 &amp;&amp; transaccion.id_comprador()==0){</span>
+<span class="nc" id="L200">            return false;</span>
+        }
+<span class="fc" id="L202">        return true;</span>
+    }
+
+//---------------------------------------------------------------------------------------------------------------------
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
